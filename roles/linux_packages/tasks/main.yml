@@ -1,0 +1,10 @@
+---
+# One list per OS family keeps distro-specific names (bind-utils vs dnsutils) out of the tasks.
+# telnet is deliberately left out; nc covers port checks without a cleartext client.
+- name: Load the package list for this OS family
+  ansible.builtin.include_vars: "{{ ansible_facts['os_family'] }}.yml"
+
+- name: Install base troubleshooting and admin packages
+  ansible.builtin.package:
+    name: "{{ linux_packages_base + linux_packages_extra }}"
+    state: present

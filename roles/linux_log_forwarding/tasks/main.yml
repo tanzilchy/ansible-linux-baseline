@@ -1,0 +1,27 @@
+---
+- name: Make sure rsyslog is installed, enabled and running
+  ansible.builtin.package:
+    name: rsyslog
+    state: present
+
+- name: Enable and start rsyslog
+  ansible.builtin.service:
+    name: rsyslog
+    enabled: true
+    state: started
+
+- name: Check the log collector accepts connections
+  ansible.builtin.wait_for:
+    host: "{{ linux_log_forwarding_target.host }}"
+    port: "{{ linux_log_forwarding_target.port }}"
+    timeout: 5
+  register: linux_log_forwarding_check
+  ignore_errors: "{{ not linux_log_forwarding_required | bool }}"
+  when: linux_log_forwarding_target | length > 0
+
+- name: Report the collector check
+  ansible.builtin.debug:
+    msg: >-
+      {{ linux_log_forwarding_target.host }}:{{ linux_log_forwarding_target.port }}
+      {{ 'reachable' if linux_log_forwarding_check is succeeded else 'NOT reachable' }}
+  when: linux_log_forwarding_target | length > 0

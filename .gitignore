@@ -1,0 +1,4 @@
+**/vault.yml
+*.retry
+collections/
+.venv/

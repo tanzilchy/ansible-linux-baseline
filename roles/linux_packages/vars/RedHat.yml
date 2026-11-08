@@ -1,0 +1,17 @@
+---
+linux_packages_base:
+  - openssh-server
+  - openssh-clients
+  - bind-utils
+  - nmap-ncat
+  - net-tools
+  - traceroute
+  - tcpdump
+  - lsof
+  - rsync
+  - curl
+  - wget
+  - tar
+  - unzip
+  - vim-enhanced
+  - dnf-utils

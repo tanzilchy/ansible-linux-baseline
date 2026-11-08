@@ -1,0 +1,26 @@
+---
+# Group whose members may use sudo. Members must type their own password.
+linux_access_admin_group: opsadmins
+
+# Human administrators. SSH by key; sudo needs their password.
+# Passwords are SHA-512 hashes from Ansible Vault and are only set when the account is created.
+linux_access_admins: []
+#  - name: jdoe
+#    comment: Jane Doe
+#    ssh_key: "ssh-ed25519 AAAA... jdoe@laptop"
+#    password_hash: "{{ vault_linux_admin_password_hashes['jdoe'] }}"
+#    state: present
+
+# Service account Ansible itself connects as. Key only, no password, so NOPASSWD sudo
+# is scoped to an account nobody can log in to interactively.
+linux_access_automation_user: ansible
+linux_access_automation_key: ""
+
+# Password ageing for interactive accounts (PCI DSS v4 8.3.9 / ISO 27001 A.5.17 style policy).
+linux_access_pass_max_days: 90
+linux_access_pass_min_days: 1
+linux_access_pass_warn_age: 7
+
+# Root keeps a vaulted break-glass password that ages like any other.
+# Leave the hash empty to leave the current root password untouched.
+linux_access_root_password_hash: ""

@@ -1,0 +1,5 @@
+---
+- name: Restart chrony
+  ansible.builtin.service:
+    name: "{{ linux_timesync_cfg.service }}"
+    state: restarted

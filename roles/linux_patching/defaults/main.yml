@@ -1,0 +1,11 @@
+---
+# Package mirror each OS major version must reach before patching starts.
+# Key by "<os_family>-<major>" with a "default" fallback; leave empty to skip the check.
+linux_patching_repo_targets: {}
+#  RedHat-8: { host: repo8.example.net, port: 443 }
+#  RedHat-9: { host: repo9.example.net, port: 443 }
+#  default:  { host: mirror.example.net, port: 443 }
+
+# Reboot only when the OS says it is needed (new kernel, glibc, systemd...).
+linux_patching_allow_reboot: true
+linux_patching_reboot_timeout: 900

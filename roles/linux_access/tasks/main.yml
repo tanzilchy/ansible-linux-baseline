@@ -1,0 +1,93 @@
+---
+- name: Set password ageing defaults for new accounts
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: "^#?{{ item.key }}\\s"
+    line: "{{ item.key }}\t{{ item.value }}"
+  loop:
+    - { key: PASS_MAX_DAYS, value: "{{ linux_access_pass_max_days }}" }
+    - { key: PASS_MIN_DAYS, value: "{{ linux_access_pass_min_days }}" }
+    - { key: PASS_WARN_AGE, value: "{{ linux_access_pass_warn_age }}" }
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Create the admin group
+  ansible.builtin.group:
+    name: "{{ linux_access_admin_group }}"
+    state: present
+
+- name: Create or remove administrator accounts
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    comment: "{{ item.comment | default(omit) }}"
+    groups: "{{ linux_access_admin_group }}"
+    append: true
+    shell: /bin/bash
+    password: "{{ item.password_hash | default(omit) }}"
+    update_password: on_create
+    password_expire_max: "{{ linux_access_pass_max_days }}"
+    password_expire_min: "{{ linux_access_pass_min_days }}"
+    state: "{{ item.state | default('present') }}"
+    remove: "{{ (item.state | default('present')) == 'absent' }}"
+  loop: "{{ linux_access_admins }}"
+  loop_control:
+    label: "{{ item.name }}"
+  no_log: true
+
+- name: Install administrator SSH keys
+  ansible.posix.authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ item.ssh_key }}"
+    exclusive: true
+  # In --check mode a brand-new account does not exist yet, so the key cannot be checked.
+  ignore_errors: "{{ ansible_check_mode }}"
+  loop: "{{ linux_access_admins }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: (item.state | default('present')) == 'present'
+
+- name: Create the automation account (key only, locked password)
+  ansible.builtin.user:
+    name: "{{ linux_access_automation_user }}"
+    comment: Ansible automation
+    shell: /bin/bash
+    password: "!"
+    password_lock: true
+  when: linux_access_automation_key | length > 0
+
+- name: Install the automation SSH key
+  ansible.posix.authorized_key:
+    user: "{{ linux_access_automation_user }}"
+    key: "{{ linux_access_automation_key }}"
+    exclusive: true
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: linux_access_automation_key | length > 0
+
+- name: Allow the admin group to use sudo with their own password
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/90-{{ linux_access_admin_group }}"
+    content: "%{{ linux_access_admin_group }} ALL=(ALL) ALL\n"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+
+- name: Allow the automation account passwordless sudo
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/91-{{ linux_access_automation_user }}"
+    content: "{{ linux_access_automation_user }} ALL=(ALL) NOPASSWD: ALL\n"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+  when: linux_access_automation_key | length > 0
+
+- name: Set the root break-glass password and its ageing
+  ansible.builtin.user:
+    name: root
+    password: "{{ linux_access_root_password_hash }}"
+    update_password: always
+    password_expire_max: "{{ linux_access_pass_max_days }}"
+    password_expire_min: "{{ linux_access_pass_min_days }}"
+  when: linux_access_root_password_hash | length > 0
+  no_log: true

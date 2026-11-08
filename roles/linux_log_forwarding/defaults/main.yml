@@ -1,0 +1,8 @@
+---
+# Central log collector (SIEM). TCP check only: if you forward over UDP 514 this check cannot
+# prove delivery, so prefer TCP or RELP for audit logs.
+linux_log_forwarding_target: {}
+#  host: siem.example.net
+#  port: 514
+# true: an unreachable collector fails the run. false: it is reported and the run continues.
+linux_log_forwarding_required: true

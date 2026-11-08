@@ -1,0 +1,14 @@
+---
+# Full baseline. Order matters: access before hardening, so key-based logins exist
+# before root and password logins are switched off.
+#   ansible-playbook playbooks/site.yml --check --diff -l uat   # preview first
+#   ansible-playbook playbooks/site.yml -l uat
+- name: Apply the Linux baseline
+  hosts: linux
+  become: true
+  roles:
+    - linux_access
+    - linux_packages
+    - linux_timesync
+    - linux_hardening
+    - linux_log_forwarding

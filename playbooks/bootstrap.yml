@@ -1,0 +1,11 @@
+---
+# First contact with a new VM: create the automation and admin accounts with SSH keys.
+# Run once as the install-time user, with that user's password:
+#   ansible-playbook playbooks/bootstrap.yml -l new-vm-01 -u root --ask-pass
+# After this, every other playbook connects as the automation account by key, and
+# site.yml can safely set PermitRootLogin no without locking Ansible out.
+- name: Bootstrap access on new hosts
+  hosts: linux
+  become: true
+  roles:
+    - linux_access

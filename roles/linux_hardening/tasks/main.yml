@@ -1,0 +1,67 @@
+---
+# OpenSSH reads sshd_config.d/*.conf on RHEL 9 and Ubuntu 20.04+. RHEL 8 has no Include line,
+# so there the settings go straight into sshd_config.
+- name: Decide where the sshd settings go
+  ansible.builtin.set_fact:
+    linux_hardening_sshd_dropin: >-
+      {{ ansible_facts['os_family'] == 'Debian'
+         or (ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] | int >= 9) }}
+
+# Anaconda writes 01-permitrootlogin.conf when root SSH was allowed at install time.
+# Our file is named 00-* so it is read first and wins, but the leftover is removed to avoid confusion.
+- name: Remove the installer's root login override
+  ansible.builtin.file:
+    path: /etc/ssh/sshd_config.d/01-permitrootlogin.conf
+    state: absent
+  notify: Reload sshd
+
+- name: Write the sshd baseline drop-in
+  ansible.builtin.template:
+    src: 00-baseline.conf.j2
+    dest: /etc/ssh/sshd_config.d/00-baseline.conf
+    owner: root
+    group: root
+    mode: "0600"
+  when: linux_hardening_sshd_dropin | bool
+  notify: Reload sshd
+
+- name: Set the sshd baseline in sshd_config
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?\\s*{{ item.key }}\\s"
+    line: "{{ item.key }} {{ item.value }}"
+    validate: /usr/sbin/sshd -t -f %s
+  loop: "{{ linux_hardening_sshd_settings | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when: not linux_hardening_sshd_dropin | bool
+  notify: Reload sshd
+
+- name: Close idle shells
+  ansible.builtin.copy:
+    dest: /etc/profile.d/99-idle-timeout.sh
+    content: |
+      # Managed by Ansible
+      TMOUT={{ linux_hardening_idle_timeout }}
+      readonly TMOUT
+      export TMOUT
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Read the systemd version
+  ansible.builtin.command: systemctl --version
+  register: linux_hardening_systemd
+  changed_when: false
+  check_mode: false
+
+# StopIdleSessionSec only exists from systemd 252. Older versions ignore it silently,
+# which looks like a control that is not there.
+- name: Stop idle logind sessions
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/logind.conf
+    regexp: "^#?StopIdleSessionSec="
+    line: "StopIdleSessionSec={{ linux_hardening_idle_timeout }}"
+    insertafter: "^\\[Login\\]"
+  when: linux_hardening_systemd.stdout_lines[0].split()[1] | int >= 252
+  notify: Restart systemd-logind
