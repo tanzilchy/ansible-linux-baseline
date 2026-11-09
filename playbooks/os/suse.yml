@@ -1,0 +1,21 @@
+---
+# Baseline for the SUSE family (SLES 15, openSUSE Leap 15): hosts in group "suse".
+#   ansible-playbook -i ~/inventories/<env>/hosts.yml playbooks/os/suse.yml
+- name: Prepare SUSE hosts for Ansible
+  hosts: suse
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Install Python 3.11
+      ansible.builtin.import_tasks: ../tasks/suse_python.yml
+
+- name: Linux baseline, SUSE family
+  hosts: suse
+  become: true
+  roles:
+    - linux_preflight
+    - linux_access
+    - linux_packages
+    - linux_timesync
+    - linux_hardening
+    - linux_log_forwarding

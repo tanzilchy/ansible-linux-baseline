@@ -19,3 +19,13 @@ argument_specs:
           SLES: 15
           SLES_SAP: 15
           openSUSE Leap: 15
+      linux_preflight_expected_os_family:
+        type: str
+        description: OS family the inventory group claims for this host. Set in `group_vars/rhel.yml`, `ubuntu.yml`
+          and `suse.yml`. A mismatch with the facts fails the host. Empty skips the check.
+        choices:
+          - ''
+          - RedHat
+          - Debian
+          - Suse
+        default: ''

@@ -1,0 +1,7 @@
+---
+# SUSE 15 ships Python 3.6, which current ansible-core cannot manage, so Python 3.11 is
+# installed with the raw module (no Python needed) before facts are gathered.
+- name: Install Python 3.11 for Ansible
+  ansible.builtin.raw: test -x /usr/bin/python3.11 || zypper --non-interactive install python311
+  register: suse_python_install
+  changed_when: "'Installing' in suse_python_install.stdout"

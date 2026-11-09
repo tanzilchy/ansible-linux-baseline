@@ -2,3 +2,6 @@
 # Red Hat family (RHEL, Rocky, AlmaLinux, CentOS Stream).
 # User that exists on a freshly installed or cloud-launched host, used once by bootstrap.yml.
 bootstrap_user: ec2-user
+
+# Checked by linux_preflight against the facts, so a misplaced host fails before any change.
+linux_preflight_expected_os_family: RedHat

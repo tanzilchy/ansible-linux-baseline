@@ -1,3 +1,6 @@
 ---
 # Ubuntu. Cloud images create the "ubuntu" user at launch.
 bootstrap_user: ubuntu
+
+# Checked by linux_preflight against the facts, so a misplaced host fails before any change.
+linux_preflight_expected_os_family: Debian

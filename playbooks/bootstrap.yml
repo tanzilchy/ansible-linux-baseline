@@ -5,6 +5,17 @@
 #   ansible-playbook -i ~/inventories/<env>/hosts.yml playbooks/bootstrap.yml -l new-host
 # On-premises hosts installed with a root password instead of a key:
 #   ansible-playbook ... playbooks/bootstrap.yml -l new-host -e bootstrap_user=root --ask-pass
+- name: Prepare SUSE hosts for Ansible
+  hosts: suse
+  become: true
+  gather_facts: false
+  vars:
+    ansible_user: "{{ bootstrap_user }}"
+    ansible_ssh_private_key_file: "{{ bootstrap_ssh_private_key_file }}"
+  tasks:
+    - name: Install Python 3.11
+      ansible.builtin.import_tasks: tasks/suse_python.yml
+
 - name: Bootstrap access on new hosts
   hosts: linux
   become: true

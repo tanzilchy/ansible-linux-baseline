@@ -21,7 +21,11 @@ ansible.cfg                    defaults that are safe for anyone who clones the 
 requirements.yml               collections: ansible.posix, community.general
 playbooks/
   bootstrap.yml                first contact: create the automation and admin accounts
-  site.yml                     the full baseline
+  site.yml                     the full baseline: imports the three OS playbooks
+  os/rhel.yml                  baseline for group rhel
+  os/ubuntu.yml                baseline for group ubuntu (waits for cloud-init first)
+  os/suse.yml                  baseline for group suse (installs Python 3.11 first)
+  tasks/suse_python.yml        shared by bootstrap.yml and os/suse.yml
   patch.yml                    rolling OS patching
 roles/
   <role>/
@@ -65,7 +69,7 @@ Every variable has exactly one home, chosen by who decides its value:
 | The role author: a safe default | `roles/<role>/defaults/main.yml` | `linux_access_pass_max_days: 90` |
 | The role author: OS facts, not settings | `roles/<role>/vars/` | chrony's config path on SUSE |
 | The site: same for every host | `group_vars/all/` | NTP servers, admin accounts |
-| The distribution | `group_vars/rhel.yml`, `ubuntu.yml`, `suse.yml` | `bootstrap_user: ubuntu` |
+| The distribution | `group_vars/rhel.yml`, `ubuntu.yml`, `suse.yml` | `bootstrap_user: ubuntu`, `linux_preflight_expected_os_family: Debian` |
 | The environment | `group_vars/uat.yml`, `prod.yml` | `linux_log_forwarding_required: true` |
 | One exceptional host | `host_vars/<host>.yml` | no automatic reboot on an appliance |
 | A secret | `group_vars/all/vault.yml` in your own inventory copy, encrypted | root password hash |
@@ -78,6 +82,20 @@ The rules behind this layout:
 - **Secrets are indirect.** Plain files reference `{{ vault_* }}` names, and the values live only in the encrypted `vault.yml`. You can search the repo for every place a secret is used without ever seeing one.
 - **Inputs are validated.** Each role's `meta/argument_specs.yml` declares types, required fields and allowed values. A typo such as `linux_access_pass_max_days: "ninety"` or an admin without a `name` stops the run before the first change.
 - **Hosts are grouped by distribution and by environment at the same time.** Distribution groups decide how to log in, environment groups decide how cautious to be, and `-l 'ubuntu:&prod'` combines them.
+
+## OS playbooks
+
+Each OS family has its own playbook under `playbooks/os/`, and `site.yml` imports all three. They run the same roles; only the steps that really differ per family live in the OS playbook:
+
+| Playbook | Hosts | Extra steps |
+|---|---|---|
+| `os/rhel.yml` | group `rhel` | none |
+| `os/ubuntu.yml` | group `ubuntu` | waits for cloud-init, which holds the apt lock on a fresh cloud image |
+| `os/suse.yml` | group `suse` | installs Python 3.11 with `raw` before facts are gathered |
+
+Everything else stays in the roles, which handle OS differences through `vars/<os_family>.yml` files. A fix to a role therefore reaches all three families at once, instead of being copied into three playbooks.
+
+Group membership is checked too: each distribution group sets `linux_preflight_expected_os_family`, and `linux_preflight` fails a host whose real OS family does not match. An Ubuntu host listed under `rhel` stops before it is touched.
 
 ## Design decisions
 
@@ -105,6 +123,7 @@ I="-i ~/inventories/lab/hosts.yml --ask-vault-pass"
 ansible-playbook $I playbooks/bootstrap.yml -l new-host
 ansible-playbook $I playbooks/site.yml --check --diff
 ansible-playbook $I playbooks/site.yml
+ansible-playbook $I playbooks/os/ubuntu.yml          # one OS family only
 ansible-playbook $I playbooks/patch.yml -l uat
 ansible-playbook $I playbooks/patch.yml -l prod -e linux_patching_batch=1
 ```

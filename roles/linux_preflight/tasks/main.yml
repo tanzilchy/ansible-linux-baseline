@@ -8,3 +8,15 @@
       {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }} is not supported.
       Supported: {{ linux_preflight_min_major | dict2items | map('join', ' >= ') | join(', ') }}
     success_msg: "{{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }} ({{ ansible_facts['os_family'] }} family)"
+
+# A host in the wrong distribution group would log in with the wrong bootstrap user and
+# run the wrong OS playbook. Catch it from the facts before anything changes.
+- name: Check the host is in the right distribution group
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == linux_preflight_expected_os_family
+    fail_msg: >-
+      {{ inventory_hostname }} is {{ ansible_facts['distribution'] }} ({{ ansible_facts['os_family'] }} family)
+      but the inventory puts it in a group for {{ linux_preflight_expected_os_family }}. Move it to the right group in hosts.yml.
+    quiet: true
+  when: linux_preflight_expected_os_family | length > 0

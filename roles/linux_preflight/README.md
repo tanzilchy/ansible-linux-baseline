@@ -6,6 +6,7 @@ Refuse unsupported distributions and releases before any change is made.
 
 - Reads the gathered facts and compares the distribution and major version with a supported-version table.
 - Fails the play for that host with a message listing what is supported.
+- Checks that the host's real OS family matches the distribution group it is in, so a misplaced host is caught before it is configured with the wrong user or playbook.
 - Runs first in every playbook, so an end-of-life host is never half-configured.
 
 ## Why it works this way
@@ -23,6 +24,7 @@ Inputs are validated against `meta/argument_specs.yml` before the first task run
 | Variable | Type | Default | Description |
 |---|---|---|---|
 | `linux_preflight_min_major` | dict | see `defaults/main.yml` | Oldest supported major release per distribution, keyed by `ansible_facts.distribution`. Distributions not listed are refused. |
+| `linux_preflight_expected_os_family` | str | `""` | OS family the inventory group claims for this host. Set in `group_vars/rhel.yml`, `ubuntu.yml` and `suse.yml`. A mismatch with the facts fails the host. Empty skips the check. |
 
 ## Example
 

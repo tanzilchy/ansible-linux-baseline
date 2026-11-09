@@ -3,5 +3,8 @@
 bootstrap_user: ec2-user
 
 # SUSE 15 ships Python 3.6 as /usr/bin/python3, which current ansible-core cannot manage.
-# Install python311 first:  ssh <host> 'sudo zypper -n in python311'
+# bootstrap.yml and os/suse.yml install python311 automatically (playbooks/tasks/suse_python.yml).
 ansible_python_interpreter: /usr/bin/python3.11
+
+# Checked by linux_preflight against the facts, so a misplaced host fails before any change.
+linux_preflight_expected_os_family: Suse

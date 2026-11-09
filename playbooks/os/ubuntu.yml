@@ -1,0 +1,28 @@
+---
+# Baseline for Ubuntu and Debian: hosts in group "ubuntu".
+#   ansible-playbook -i ~/inventories/<env>/hosts.yml playbooks/os/ubuntu.yml
+- name: Linux baseline, Debian family
+  hosts: ubuntu
+  become: true
+  pre_tasks:
+    # On a freshly launched cloud image, cloud-init and unattended-upgrades hold the apt lock
+    # for the first minutes. Waiting avoids "Could not get lock /var/lib/dpkg/lock-frontend".
+    - name: Check whether cloud-init is installed
+      ansible.builtin.stat:
+        path: /usr/bin/cloud-init
+      register: ubuntu_cloud_init
+
+    - name: Wait for cloud-init to finish first-boot setup
+      ansible.builtin.command: cloud-init status --wait
+      register: ubuntu_cloud_init_status
+      changed_when: false
+      # 0 done, 2 done with recoverable errors; either way it has released the apt lock
+      failed_when: ubuntu_cloud_init_status.rc not in [0, 2]
+      when: ubuntu_cloud_init.stat.exists
+  roles:
+    - linux_preflight
+    - linux_access
+    - linux_packages
+    - linux_timesync
+    - linux_hardening
+    - linux_log_forwarding

@@ -11,3 +11,7 @@ linux_preflight_min_major:
   SLES: 15
   SLES_SAP: 15
   openSUSE Leap: 15
+
+# OS family the inventory says this host has, set by the distribution group
+# (group_vars/rhel.yml, ubuntu.yml, suse.yml). Empty skips the check.
+linux_preflight_expected_os_family: ""
