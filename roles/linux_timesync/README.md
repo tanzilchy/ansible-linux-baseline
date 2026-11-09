@@ -37,7 +37,7 @@ Internal: `linux_timesync_os` in `vars/main.yml` maps each OS family to its chro
         linux_timesync_servers: [ntp1.example.net, ntp2.example.net]
 ```
 
-In this repository the values come from `inventory/<env>/group_vars/` rather than play `vars`. See the top-level README for the layout.
+In this repository the values come from the inventory's `group_vars/` rather than play `vars`. See the top-level README for the layout.
 
 ## Dependencies
 

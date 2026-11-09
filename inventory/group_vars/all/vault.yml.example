@@ -2,8 +2,8 @@
 # Secrets referenced by baseline.yml. Every name starts with vault_ so it is obvious
 # in the plain-text files which values come from here.
 #
-#   cp vault.yml.example vault.yml
-#   ansible-vault encrypt vault.yml          # vault.yml is git-ignored even when encrypted
+#   In your own copy of the inventory (outside the repo):
+#   cp vault.yml.example vault.yml && ansible-vault encrypt vault.yml
 #
 # Generate SHA-512 hashes with:  openssl passwd -6
 vault_linux_root_password_hash: "$6$replace$me"

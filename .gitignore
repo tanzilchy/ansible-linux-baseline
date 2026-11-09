@@ -1,6 +1,5 @@
-# Only the example inventory is published. Real environments stay on the control node.
-inventory/*
-!inventory/example/
+# inventory/ holds the published example only. Real inventories live outside the repo
+# (for example ~/inventories/lab/) and are passed with -i. Secrets are never committed.
 **/vault.yml
 *.pem
 *.retry

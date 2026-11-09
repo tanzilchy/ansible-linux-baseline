@@ -36,7 +36,7 @@ Inputs are validated against `meta/argument_specs.yml` before the first task run
         linux_log_forwarding_target: {host: siem.example.net, port: 514}
 ```
 
-In this repository the values come from `inventory/<env>/group_vars/` rather than play `vars`. See the top-level README for the layout.
+In this repository the values come from the inventory's `group_vars/` rather than play `vars`. See the top-level README for the layout.
 
 ## Dependencies
 

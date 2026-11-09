@@ -42,7 +42,7 @@ Playbook variable: `linux_patching_batch` is read by `playbooks/patch.yml`, not 
         linux_patching_allow_reboot: false
 ```
 
-In this repository the values come from `inventory/<env>/group_vars/` rather than play `vars`. See the top-level README for the layout.
+In this repository the values come from the inventory's `group_vars/` rather than play `vars`. See the top-level README for the layout.
 
 ## Dependencies
 

@@ -45,7 +45,7 @@ Run after `linux_access`. Turning off root and password logins before key-based 
         linux_hardening_idle_timeout: 600
 ```
 
-In this repository the values come from `inventory/<env>/group_vars/` rather than play `vars`. See the top-level README for the layout.
+In this repository the values come from the inventory's `group_vars/` rather than play `vars`. See the top-level README for the layout.
 
 ## Dependencies
 

@@ -2,7 +2,7 @@
 # First contact with a new host: create the automation and admin accounts with SSH keys.
 # Connects as the distribution's launch user (bootstrap_user) with the launch key, then
 # every other playbook connects as the automation account defined in group_vars/all.
-#   ansible-playbook -i inventory/<env>/hosts.yml playbooks/bootstrap.yml -l new-host
+#   ansible-playbook -i ~/inventories/<env>/hosts.yml playbooks/bootstrap.yml -l new-host
 # On-premises hosts installed with a root password instead of a key:
 #   ansible-playbook ... playbooks/bootstrap.yml -l new-host -e bootstrap_user=root --ask-pass
 - name: Bootstrap access on new hosts

@@ -31,16 +31,15 @@ roles/
     meta/argument_specs.yml    variable contract, validated before the first task runs
     meta/main.yml              author, licence, supported platforms
     tasks/ handlers/ templates/
-inventory/
-  example/                     the only inventory in Git; copy it per environment
-    hosts.yml
-    group_vars/
-      all/connection.yml       how Ansible logs in
-      all/baseline.yml         site-wide inputs for the roles
-      all/vault.yml.example    names of the secrets, never the values
-      rhel.yml ubuntu.yml suse.yml   per-distribution login user and Python path
-      uat.yml prod.yml         per-environment behaviour
-    host_vars/                 rare one-host exceptions
+inventory/                     published example; copy it outside the repo per environment
+  hosts.yml
+  group_vars/
+    all/connection.yml         how Ansible logs in
+    all/baseline.yml           site-wide inputs for the roles
+    all/vault.yml.example      names of the secrets, never the values
+    rhel.yml ubuntu.yml suse.yml   per-distribution login user and Python path
+    uat.yml prod.yml           per-environment behaviour
+  host_vars/                   rare one-host exceptions
 ```
 
 ## Roles
@@ -63,11 +62,11 @@ Every variable has exactly one home, chosen by who decides its value:
 |---|---|---|
 | The role author: a safe default | `roles/<role>/defaults/main.yml` | `linux_access_pass_max_days: 90` |
 | The role author: OS facts, not settings | `roles/<role>/vars/` | chrony's config path on SUSE |
-| The site: same for every host | `inventory/<env>/group_vars/all/` | NTP servers, admin accounts |
+| The site: same for every host | `group_vars/all/` | NTP servers, admin accounts |
 | The distribution | `group_vars/rhel.yml`, `ubuntu.yml`, `suse.yml` | `bootstrap_user: ubuntu` |
 | The environment | `group_vars/uat.yml`, `prod.yml` | `linux_log_forwarding_required: true` |
 | One exceptional host | `host_vars/<host>.yml` | no automatic reboot on an appliance |
-| A secret | `group_vars/all/vault.yml`, encrypted, git-ignored | root password hash |
+| A secret | `group_vars/all/vault.yml` in your own inventory copy, encrypted | root password hash |
 | One run | `-e` on the command line | `-e linux_patching_batch=1` |
 
 The rules behind this layout:
@@ -94,13 +93,13 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install ansible-core
 ansible-galaxy collection install -r requirements.yml
 
-# One directory per environment; everything except inventory/example/ is git-ignored
-cp -r inventory/example inventory/lab
-cp inventory/lab/group_vars/all/vault.yml.example inventory/lab/group_vars/all/vault.yml
-ansible-vault encrypt inventory/lab/group_vars/all/vault.yml
-# edit hosts.yml, group_vars/all/*.yml
+# Real inventories live outside the repo, one directory per environment
+mkdir -p ~/inventories && cp -r inventory ~/inventories/lab
+cp ~/inventories/lab/group_vars/all/vault.yml.example ~/inventories/lab/group_vars/all/vault.yml
+ansible-vault encrypt ~/inventories/lab/group_vars/all/vault.yml
+# edit hosts.yml and group_vars/all/*.yml there
 
-I="-i inventory/lab/hosts.yml --ask-vault-pass"
+I="-i ~/inventories/lab/hosts.yml --ask-vault-pass"
 ansible-playbook $I playbooks/bootstrap.yml -l new-host
 ansible-playbook $I playbooks/site.yml --check --diff
 ansible-playbook $I playbooks/site.yml

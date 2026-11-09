@@ -36,7 +36,7 @@ Internal: `linux_packages_base` is defined in `vars/RedHat.yml`, `vars/Debian.ym
         linux_packages_extra: [htop, jq]
 ```
 
-In this repository the values come from `inventory/<env>/group_vars/` rather than play `vars`. See the top-level README for the layout.
+In this repository the values come from the inventory's `group_vars/` rather than play `vars`. See the top-level README for the layout.
 
 ## Dependencies
 
