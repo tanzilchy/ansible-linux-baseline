@@ -1,0 +1,20 @@
+---
+# Password quality, history and lockout. The settings files are the same on every family;
+# only the step that switches the PAM modules on differs, and it is chosen by OS family.
+# Run a single part with its tag, for example: --tags password_policy_verify
+
+- name: Password policy settings
+  ansible.builtin.import_tasks: settings.yml
+  tags: [password_policy, password_policy_settings]
+
+# Dynamic include: only one of enable_redhat.yml, enable_debian.yml, enable_suse.yml runs.
+- name: Enable the PAM modules for this OS family
+  ansible.builtin.include_tasks: enable_{{ ansible_facts['os_family'] | lower }}.yml
+  args:
+    apply:
+      tags: [password_policy, password_policy_enable]
+  tags: [password_policy, password_policy_enable]
+
+- name: Verify the policy is enforced
+  ansible.builtin.import_tasks: verify.yml
+  tags: [password_policy, password_policy_verify]

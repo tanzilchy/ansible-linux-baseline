@@ -1,14 +1,14 @@
 ---
-# Full baseline for every supported OS. Each OS family has its own playbook under os/,
+# Full baseline for every supported OS. Each OS family has its own playbook as setup-<os>-vm.yml,
 # which runs the same roles plus only what really differs for that family.
 #   ansible-playbook -i ~/inventories/<env>/hosts.yml playbooks/site.yml --check --diff   # preview
 #   ansible-playbook -i ~/inventories/<env>/hosts.yml playbooks/site.yml
-#   ansible-playbook -i ~/inventories/<env>/hosts.yml playbooks/os/ubuntu.yml             # one family
+#   ansible-playbook -i ~/inventories/<env>/hosts.yml playbooks/setup-ubuntu-vm.yml             # one family
 - name: Red Hat family
-  ansible.builtin.import_playbook: os/rhel.yml
+  ansible.builtin.import_playbook: setup-rhel-vm.yml
 
 - name: Debian family
-  ansible.builtin.import_playbook: os/ubuntu.yml
+  ansible.builtin.import_playbook: setup-ubuntu-vm.yml
 
 - name: SUSE family
-  ansible.builtin.import_playbook: os/suse.yml
+  ansible.builtin.import_playbook: setup-suse-vm.yml

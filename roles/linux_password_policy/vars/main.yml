@@ -1,0 +1,6 @@
+---
+# Package that provides pam_pwquality and the pwscore test tool, per OS family.
+linux_password_policy_packages:
+  RedHat: [libpwquality]
+  Debian: [libpam-pwquality, libpwquality-tools]
+  Suse: [pam_pwquality, pwquality-tools]

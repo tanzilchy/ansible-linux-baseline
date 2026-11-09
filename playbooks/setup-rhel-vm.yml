@@ -1,12 +1,13 @@
 ---
 # Baseline for the Red Hat family (RHEL, Rocky, AlmaLinux, CentOS Stream): hosts in group "rhel".
-#   ansible-playbook -i ~/inventories/<env>/hosts.yml playbooks/os/rhel.yml
+#   ansible-playbook -i ~/inventories/<env>/hosts.yml playbooks/setup-rhel-vm.yml
 - name: Linux baseline, Red Hat family
   hosts: rhel
   become: true
   roles:
     - linux_preflight
     - linux_access
+    - linux_password_policy
     - linux_packages
     - linux_timesync
     - linux_hardening

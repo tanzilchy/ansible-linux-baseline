@@ -25,7 +25,7 @@ Inputs are validated against `meta/argument_specs.yml` before the first task run
 |---|---|---|---|
 | `linux_hardening_permit_root_login` | str | `no` | `PermitRootLogin`. Keep `no` once bootstrap has created key-based accounts. |
 | `linux_hardening_password_authentication` | str | `no` | `PasswordAuthentication`. |
-| `linux_hardening_max_auth_tries` | int | `4` | `MaxAuthTries`. |
+| `linux_hardening_max_auth_tries` | int | `3` | `MaxAuthTries`. |
 | `linux_hardening_login_grace_time` | int | `60` | `LoginGraceTime` in seconds. |
 | `linux_hardening_idle_timeout` | int | `300` | Seconds before idle shells and logind sessions are closed. |
 | `linux_hardening_sshd_settings` | dict | built from the variables above, plus X11Forwarding no, PermitEmptyPasswords no, ClientAliveInterval 300, ClientAliveCountMax 3 | Full set of sshd keywords written to the server. Override the whole dictionary to add keywords. |

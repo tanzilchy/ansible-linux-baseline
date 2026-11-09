@@ -1,0 +1,21 @@
+---
+# Prove the quality rules instead of trusting the config: pwscore applies the same checks as passwd.
+# Lockout is not tested here because it would lock a real account; see the role README for the manual test.
+
+- name: Check that a weak password is rejected
+  ansible.builtin.command: pwscore
+  args:
+    stdin: "Password1"
+  register: linux_password_policy_weak
+  changed_when: false
+  failed_when: linux_password_policy_weak.rc == 0
+  check_mode: false
+
+- name: Check that a compliant password is accepted
+  ansible.builtin.command: pwscore
+  args:
+    stdin: "Tr4ck-{{ 99999999 | random(seed=inventory_hostname) }}-Quokka!"
+  register: linux_password_policy_strong
+  changed_when: false
+  failed_when: linux_password_policy_strong.rc != 0
+  check_mode: false

@@ -1,0 +1,35 @@
+---
+# SUSE family: PAM is owned by pam-config, which writes /etc/pam.d/common-*-pc files.
+# Not yet tested on a live SUSE host; check the result in /etc/pam.d/common-auth after the first run.
+
+- name: Check whether pam_faillock is available
+  ansible.builtin.stat:
+    path: /lib64/security/pam_faillock.so
+  register: linux_password_policy_suse_faillock
+
+- name: Stop if this SUSE release has no pam_faillock
+  ansible.builtin.assert:
+    that:
+      - linux_password_policy_suse_faillock.stat.exists
+    fail_msg: >-
+      pam_faillock.so is missing on {{ inventory_hostname }}. Update to a SUSE release whose PAM includes it
+      before applying the lockout policy.
+    quiet: true
+
+- name: Read the PAM modules pam-config has enabled
+  ansible.builtin.command: pam-config --query --pwquality --pwhistory --faillock
+  register: linux_password_policy_pamconfig
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Enable pwquality, pwhistory and faillock through pam-config
+  ansible.builtin.command: >-
+    pam-config --add --pwquality
+    --pwhistory --pwhistory-remember={{ linux_password_policy_remember }}
+    --faillock
+  when: >-
+    'pwhistory' not in linux_password_policy_pamconfig.stdout
+    or 'faillock' not in linux_password_policy_pamconfig.stdout
+    or 'pwquality' not in linux_password_policy_pamconfig.stdout
+  changed_when: true

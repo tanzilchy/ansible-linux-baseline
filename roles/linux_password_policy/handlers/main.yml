@@ -1,0 +1,5 @@
+---
+# Rebuilds /etc/pam.d/common-* only when a pam-auth-update profile actually changed.
+- name: Rebuild common PAM files
+  ansible.builtin.command: pam-auth-update --package --enable faillock faillock_notify pwhistory
+  changed_when: true

@@ -1,0 +1,9 @@
+# {{ ansible_managed }}
+deny = {{ linux_password_policy_lockout_deny }}
+fail_interval = {{ linux_password_policy_lockout_fail_interval }}
+unlock_time = {{ linux_password_policy_lockout_unlock_time }}
+# Record locked accounts in the audit log.
+audit
+{% if linux_password_policy_lockout_root %}
+even_deny_root
+{% endif %}

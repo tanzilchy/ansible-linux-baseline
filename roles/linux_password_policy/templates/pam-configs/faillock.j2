@@ -1,0 +1,6 @@
+Name: Lock accounts after repeated failed logins (managed by Ansible)
+Default: yes
+Priority: 0
+Auth-Type: Primary
+Auth:
+	[default=die]	pam_faillock.so authfail

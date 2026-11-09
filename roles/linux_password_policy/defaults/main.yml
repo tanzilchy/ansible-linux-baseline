@@ -1,0 +1,23 @@
+---
+# Password quality (pam_pwquality, /etc/security/pwquality.conf).
+# PCI DSS v4 8.3.6 asks for at least 12 characters with letters and digits.
+linux_password_policy_minlen: 12
+linux_password_policy_require_lower: true
+linux_password_policy_require_upper: true
+linux_password_policy_require_digit: true
+linux_password_policy_require_special: true
+# Reject passwords that contain the username, forwards or reversed.
+linux_password_policy_reject_username: true
+# Apply the quality rules when root sets a password too.
+linux_password_policy_enforce_for_root: true
+
+# Password history (pam_pwhistory): how many previous passwords cannot be reused.
+linux_password_policy_remember: 5
+
+# Account lockout (pam_faillock, /etc/security/faillock.conf):
+# lock after <deny> failures within <fail_interval> seconds, for <unlock_time> seconds.
+linux_password_policy_lockout_deny: 3
+linux_password_policy_lockout_fail_interval: 300
+linux_password_policy_lockout_unlock_time: 1800
+# Root stays exempt so a console break-glass login always works.
+linux_password_policy_lockout_root: false

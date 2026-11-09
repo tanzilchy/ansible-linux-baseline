@@ -1,0 +1,35 @@
+---
+# Red Hat family: PAM is owned by authselect. Editing /etc/pam.d directly is undone the next time
+# anyone runs authselect, so the modules are switched on as authselect features instead.
+
+- name: Read the active authselect profile
+  ansible.builtin.command: authselect current --raw
+  register: linux_password_policy_authselect
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Stop if PAM is not managed by authselect
+  ansible.builtin.assert:
+    that:
+      - linux_password_policy_authselect.rc == 0
+    fail_msg: >-
+      authselect has no active profile on {{ inventory_hostname }}, so PAM was customised by hand.
+      Review /etc/pam.d, then select a profile (for example "authselect select sssd --force") and rerun.
+    quiet: true
+
+- name: Enable faillock and pwhistory features
+  ansible.builtin.command: authselect enable-feature {{ item }}
+  loop: [with-faillock, with-pwhistory]
+  when: item not in linux_password_policy_authselect.stdout.split()
+  changed_when: true
+
+# RHEL 8 ships PAM 1.3, which does not read pwhistory.conf, so "remember" is set on the module line.
+- name: Set password history length on PAM 1.3 (RHEL 8)
+  ansible.builtin.lineinfile:
+    path: "/etc/pam.d/{{ item }}"
+    regexp: '^(password\s+\S+\s+pam_pwhistory\.so)(?:\s+remember=\d+)?(.*)$'
+    line: '\1 remember={{ linux_password_policy_remember }}\2'
+    backrefs: true
+  loop: [system-auth, password-auth]
+  when: ansible_facts['distribution_major_version'] | int < 9

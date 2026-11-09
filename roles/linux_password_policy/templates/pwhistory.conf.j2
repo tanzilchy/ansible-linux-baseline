@@ -1,0 +1,5 @@
+# {{ ansible_managed }}
+remember = {{ linux_password_policy_remember }}
+{% if linux_password_policy_enforce_for_root %}
+enforce_for_root
+{% endif %}

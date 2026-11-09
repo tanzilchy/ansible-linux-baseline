@@ -1,6 +1,6 @@
 ---
 # Baseline for Ubuntu and Debian: hosts in group "ubuntu".
-#   ansible-playbook -i ~/inventories/<env>/hosts.yml playbooks/os/ubuntu.yml
+#   ansible-playbook -i ~/inventories/<env>/hosts.yml playbooks/setup-ubuntu-vm.yml
 - name: Linux baseline, Debian family
   hosts: ubuntu
   become: true
@@ -22,6 +22,7 @@
   roles:
     - linux_preflight
     - linux_access
+    - linux_password_policy
     - linux_packages
     - linux_timesync
     - linux_hardening

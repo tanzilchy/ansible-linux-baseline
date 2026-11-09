@@ -1,0 +1,6 @@
+Name: Remember previous passwords (managed by Ansible)
+Default: yes
+Priority: 1024
+Password-Type: Primary
+Password:
+	requisite	pam_pwhistory.so remember={{ linux_password_policy_remember }}{{ ' enforce_for_root' if linux_password_policy_enforce_for_root else '' }} try_first_pass use_authtok

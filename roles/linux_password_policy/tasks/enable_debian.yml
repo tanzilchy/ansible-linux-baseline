@@ -1,0 +1,18 @@
+---
+# Debian family: PAM is owned by pam-auth-update, which rebuilds /etc/pam.d/common-* from the
+# profiles in /usr/share/pam-configs. Adding profiles there survives package upgrades;
+# editing common-auth directly does not. Profile layout follows the CIS Ubuntu benchmark.
+
+- name: Install pam-auth-update profiles for faillock and pwhistory
+  ansible.builtin.template:
+    src: "pam-configs/{{ item }}.j2"
+    dest: "/usr/share/pam-configs/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: [faillock, faillock_notify, pwhistory]
+  notify: Rebuild common PAM files
+
+# Apply now rather than at the end of the play, so the verify step and later roles see the new PAM stack.
+- name: Apply the PAM rebuild now
+  ansible.builtin.meta: flush_handlers

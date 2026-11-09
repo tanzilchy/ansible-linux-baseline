@@ -22,10 +22,10 @@ requirements.yml               collections: ansible.posix, community.general
 playbooks/
   bootstrap.yml                first contact: create the automation and admin accounts
   site.yml                     the full baseline: imports the three OS playbooks
-  os/rhel.yml                  baseline for group rhel
-  os/ubuntu.yml                baseline for group ubuntu (waits for cloud-init first)
-  os/suse.yml                  baseline for group suse (installs Python 3.11 first)
-  tasks/suse_python.yml        shared by bootstrap.yml and os/suse.yml
+  os/setup-rhel-vm.yml                  baseline for group rhel
+  os/setup-ubuntu-vm.yml                baseline for group ubuntu (waits for cloud-init first)
+  os/setup-suse-vm.yml                  baseline for group suse (installs Python 3.11 first)
+  tasks/suse_python.yml        shared by bootstrap.yml and os/setup-suse-vm.yml
   patch.yml                    rolling OS patching
 roles/
   <role>/
@@ -54,6 +54,7 @@ inventory/                     published example; copy it outside the repo per e
 |---|---|
 | [linux_preflight](roles/linux_preflight/README.md) | Refuses unsupported distributions and releases |
 | [linux_access](roles/linux_access/README.md) | Admin and automation accounts, SSH keys, sudoers drop-ins, password ageing, root break-glass password |
+| [linux_password_policy](roles/linux_password_policy/README.md) | Password length and character rules, no username, history of 5, lockout after 3 failures |
 | [linux_packages](roles/linux_packages/README.md) | Base admin and troubleshooting tools, one list per OS family |
 | [linux_timesync](roles/linux_timesync/README.md) | chrony as the only time service, with a source check |
 | [linux_hardening](roles/linux_hardening/README.md) | sshd baseline (drop-in or main file), idle shell and logind timeouts |
@@ -96,6 +97,24 @@ Each OS family has its own playbook under `playbooks/os/`, and `site.yml` import
 Everything else stays in the roles, which handle OS differences through `vars/<os_family>.yml` files. A fix to a role therefore reaches all three families at once, instead of being copied into three playbooks.
 
 Group membership is checked too: each distribution group sets `linux_preflight_expected_os_family`, and `linux_preflight` fails a host whose real OS family does not match. An Ubuntu host listed under `rhel` stops before it is touched.
+
+## Security checklist coverage
+
+| Control | Setting | Where |
+|---|---|---|
+| Root login disabled | `PermitRootLogin no` | linux_hardening |
+| Empty passwords denied | `PermitEmptyPasswords no` | linux_hardening |
+| 3 authentication attempts per connection | `MaxAuthTries 3` | linux_hardening |
+| Login grace time 1 minute | `LoginGraceTime 60` | linux_hardening |
+| Idle session timeout 5 minutes | `TMOUT=300`, logind `StopIdleSessionSec=300` | linux_hardening |
+| Password ageing for new accounts | 90 / 1 / 7 days in `login.defs` | linux_access |
+| Minimum length 12 | `minlen = 12` | linux_password_policy |
+| Lowercase, uppercase, digit and special character | `lcredit`, `ucredit`, `dcredit`, `ocredit = -1` | linux_password_policy |
+| No username in the password, in any form | `usercheck = 1` | linux_password_policy |
+| Last 5 passwords cannot be reused | `pam_pwhistory remember=5` | linux_password_policy |
+| Lockout after 3 failures in 5 minutes, for 30 minutes | `pam_faillock deny=3 fail_interval=300 unlock_time=1800` | linux_password_policy |
+
+On Ubuntu 24.04 the password and lockout rules were checked on a live host: weak, short and username-containing passwords are rejected by `pwscore`, and after three wrong passwords the correct one is refused with "30 minutes left to unlock". RHEL and SUSE runs are still to be done.
 
 ## Design decisions
 

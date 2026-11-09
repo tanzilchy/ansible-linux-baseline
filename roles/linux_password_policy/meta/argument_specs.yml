@@ -1,0 +1,55 @@
+---
+# Variable contract for this role. Ansible validates the inputs against it before the
+# first task runs, and README.md documents the same variables.
+argument_specs:
+  main:
+    short_description: Password quality, password history and account lockout through PAM.
+    options:
+      linux_password_policy_minlen:
+        type: int
+        description: Minimum password length.
+        default: 12
+      linux_password_policy_require_lower:
+        type: bool
+        description: Require at least one lowercase letter.
+        default: true
+      linux_password_policy_require_upper:
+        type: bool
+        description: Require at least one uppercase letter.
+        default: true
+      linux_password_policy_require_digit:
+        type: bool
+        description: Require at least one digit.
+        default: true
+      linux_password_policy_require_special:
+        type: bool
+        description: Require at least one special character.
+        default: true
+      linux_password_policy_reject_username:
+        type: bool
+        description: Reject passwords containing the username, forwards or reversed.
+        default: true
+      linux_password_policy_enforce_for_root:
+        type: bool
+        description: Apply quality and history rules when root sets a password.
+        default: true
+      linux_password_policy_remember:
+        type: int
+        description: Number of previous passwords that cannot be reused.
+        default: 5
+      linux_password_policy_lockout_deny:
+        type: int
+        description: Failed attempts before the account locks.
+        default: 3
+      linux_password_policy_lockout_fail_interval:
+        type: int
+        description: Window in seconds in which failures are counted.
+        default: 300
+      linux_password_policy_lockout_unlock_time:
+        type: int
+        description: Seconds the account stays locked.
+        default: 1800
+      linux_password_policy_lockout_root:
+        type: bool
+        description: Also lock root (`even_deny_root`). Off by default to keep the console break-glass login.
+        default: false

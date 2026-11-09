@@ -1,0 +1,33 @@
+---
+# One settings file per PAM module, identical on every OS family.
+
+- name: Install pam_pwquality and its test tool
+  ansible.builtin.package:
+    name: "{{ linux_password_policy_packages[ansible_facts['os_family']] }}"
+    state: present
+
+- name: Write password quality rules
+  ansible.builtin.template:
+    src: pwquality.conf.j2
+    dest: /etc/security/pwquality.conf
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Write account lockout rules
+  ansible.builtin.template:
+    src: faillock.conf.j2
+    dest: /etc/security/faillock.conf
+    owner: root
+    group: root
+    mode: "0644"
+
+# pwhistory.conf is only read by PAM 1.5 and newer (RHEL 9, Ubuntu 24.04). Older PAM gets the
+# same value as a module argument in the enable_*.yml step, so both paths end up with "remember".
+- name: Write password history rules
+  ansible.builtin.template:
+    src: pwhistory.conf.j2
+    dest: /etc/security/pwhistory.conf
+    owner: root
+    group: root
+    mode: "0644"
