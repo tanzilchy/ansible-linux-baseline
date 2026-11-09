@@ -1,0 +1,37 @@
+---
+# Human administrators: group, accounts, password ageing and SSH keys.
+
+- name: Create the admin group
+  ansible.builtin.group:
+    name: "{{ linux_access_admin_group }}"
+    state: present
+
+- name: Create or remove administrator accounts
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    comment: "{{ item.comment | default(omit) }}"
+    groups: "{{ linux_access_admin_group }}"
+    append: true
+    shell: /bin/bash
+    password: "{{ item.password_hash | default(omit) }}"
+    update_password: on_create
+    password_expire_max: "{{ linux_access_pass_max_days }}"
+    password_expire_min: "{{ linux_access_pass_min_days }}"
+    state: "{{ item.state | default('present') }}"
+    remove: "{{ (item.state | default('present')) == 'absent' }}"
+  loop: "{{ linux_access_admins }}"
+  loop_control:
+    label: "{{ item.name }}"
+  no_log: true
+
+- name: Install administrator SSH keys
+  ansible.posix.authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ item.ssh_key }}"
+    exclusive: true
+  # In --check mode a brand-new account does not exist yet, so the key cannot be checked.
+  ignore_errors: "{{ ansible_check_mode }}"
+  loop: "{{ linux_access_admins }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: (item.state | default('present')) == 'present'

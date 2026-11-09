@@ -1,0 +1,14 @@
+---
+# Before and after, for the change record.
+
+- name: Re-read the kernel version
+  ansible.builtin.setup:
+    filter:
+      - ansible_kernel
+
+- name: Report the patch result
+  ansible.builtin.debug:
+    msg:
+      - "Kernel before: {{ linux_patching_kernel_before | default('not recorded (precheck skipped)') }}"
+      - "Kernel after:  {{ ansible_facts['kernel'] }}"
+      - "Reboot needed: {{ linux_patching_reboot_required }} (allowed: {{ linux_patching_allow_reboot }})"

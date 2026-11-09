@@ -34,6 +34,18 @@ Inputs are validated against `meta/argument_specs.yml` before the first task run
 | `linux_access_pass_warn_age` | int | `7` | Days of warning before a password expires. |
 | `linux_access_root_password_hash` | str | `""` | SHA-512 hash for root's break-glass password, from Vault. Empty leaves root untouched. |
 
+## Task files
+
+`tasks/main.yml` only sets the order. Each concern has its own file and tag, so one part can run alone, for example `--tags access_login_defs`.
+
+| File | Tag | Does |
+|---|---|---|
+| `tasks/login_defs.yml` | `access_login_defs` | Password ageing defaults in /etc/login.defs |
+| `tasks/admins.yml` | `access_admins` | Admin group, accounts, ageing, SSH keys |
+| `tasks/automation_user.yml` | `access_automation` | Key-only automation account |
+| `tasks/sudoers.yml` | `access_sudoers` | sudoers drop-ins, checked with visudo |
+| `tasks/root_password.yml` | `access_root` | Vaulted root break-glass password |
+
 ## Example
 
 ```yaml

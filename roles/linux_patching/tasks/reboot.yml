@@ -1,0 +1,17 @@
+---
+# Reboot only when the OS reported it is needed and rebooting is allowed.
+
+- name: Decide whether to reboot
+  ansible.builtin.set_fact:
+    linux_patching_reboot_required: >-
+      {{ (linux_patching_needs_restart.rc | default(0)) == 1
+         or (linux_patching_reboot_flag.stat.exists | default(false))
+         or (linux_patching_zypper_reboot.rc | default(0)) == 102 }}
+
+- name: Reboot and wait for the host to come back
+  ansible.builtin.reboot:
+    msg: Rebooting after patching (Ansible)
+    reboot_timeout: "{{ linux_patching_reboot_timeout }}"
+  when:
+    - linux_patching_reboot_required | bool
+    - linux_patching_allow_reboot | bool

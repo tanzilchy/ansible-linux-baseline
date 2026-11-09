@@ -1,93 +1,23 @@
 ---
-- name: Pick the package mirror for this host
-  ansible.builtin.set_fact:
-    linux_patching_repo: >-
-      {{ linux_patching_repo_targets[ansible_facts['os_family'] ~ '-' ~ ansible_facts['distribution_major_version']]
-         | default(linux_patching_repo_targets['default'] | default({})) }}
+# OS patching. The package manager step is chosen by OS family, so each family's
+# commands live in their own file instead of behind when: conditions.
 
-- name: Check the package mirror is reachable before changing anything
-  ansible.builtin.wait_for:
-    host: "{{ linux_patching_repo.host }}"
-    port: "{{ linux_patching_repo.port }}"
-    timeout: 5
-  when: linux_patching_repo | length > 0
+- name: Pre-patch checks
+  ansible.builtin.import_tasks: precheck.yml
+  tags: [patching, patching_precheck]
 
-- name: Record the running kernel before patching
-  ansible.builtin.set_fact:
-    linux_patching_kernel_before: "{{ ansible_facts['kernel'] }}"
+# Dynamic include: only one of update_redhat.yml, update_debian.yml, update_suse.yml runs.
+- name: Apply updates for this OS family
+  ansible.builtin.include_tasks: update_{{ ansible_facts['os_family'] | lower }}.yml
+  args:
+    apply:
+      tags: [patching, patching_update]
+  tags: [patching, patching_update]
 
-- name: Apply all updates (RHEL family)  # noqa: package-latest patching is the point of this task
-  ansible.builtin.dnf:
-    name: "*"
-    state: latest
-    update_cache: true
-  when: ansible_facts['os_family'] == 'RedHat'
-  register: linux_patching_dnf
+- name: Reboot if required
+  ansible.builtin.import_tasks: reboot.yml
+  tags: [patching, patching_reboot]
 
-- name: Apply all updates (Debian family)
-  ansible.builtin.apt:
-    upgrade: dist
-    update_cache: true
-    cache_valid_time: 3600
-  when: ansible_facts['os_family'] == 'Debian'
-  register: linux_patching_apt
-
-- name: Apply all updates (SUSE family)
-  community.general.zypper:
-    name: "*"
-    state: latest
-    type: package
-    update_cache: true
-  when: ansible_facts['os_family'] == 'Suse'
-  register: linux_patching_zypper
-
-# needs-restarting -r: exit 0 = no reboot needed, 1 = reboot needed.
-- name: Ask the OS whether a reboot is needed (RHEL family)
-  ansible.builtin.command: needs-restarting -r
-  register: linux_patching_needs_restart
-  changed_when: false
-  check_mode: false
-  failed_when: linux_patching_needs_restart.rc not in [0, 1]
-  when: ansible_facts['os_family'] == 'RedHat'
-
-- name: Ask the OS whether a reboot is needed (Debian family)
-  ansible.builtin.stat:
-    path: /var/run/reboot-required
-  register: linux_patching_reboot_flag
-  when: ansible_facts['os_family'] == 'Debian'
-
-# zypper needs-rebooting: exit 0 = no reboot needed, 102 = reboot needed.
-- name: Ask the OS whether a reboot is needed (SUSE family)
-  ansible.builtin.command: zypper --non-interactive needs-rebooting
-  register: linux_patching_zypper_reboot
-  changed_when: false
-  check_mode: false
-  failed_when: linux_patching_zypper_reboot.rc not in [0, 102]
-  when: ansible_facts['os_family'] == 'Suse'
-
-- name: Decide whether to reboot
-  ansible.builtin.set_fact:
-    linux_patching_reboot_required: >-
-      {{ (linux_patching_needs_restart.rc | default(0)) == 1
-         or (linux_patching_reboot_flag.stat.exists | default(false))
-         or (linux_patching_zypper_reboot.rc | default(0)) == 102 }}
-
-- name: Reboot and wait for the host to come back
-  ansible.builtin.reboot:
-    msg: Rebooting after patching (Ansible)
-    reboot_timeout: "{{ linux_patching_reboot_timeout }}"
-  when:
-    - linux_patching_reboot_required | bool
-    - linux_patching_allow_reboot | bool
-
-- name: Re-read the kernel version
-  ansible.builtin.setup:
-    filter:
-      - ansible_kernel
-
-- name: Report the patch result
-  ansible.builtin.debug:
-    msg:
-      - "Kernel before: {{ linux_patching_kernel_before }}"
-      - "Kernel after:  {{ ansible_facts['kernel'] }}"
-      - "Reboot needed: {{ linux_patching_reboot_required }} (allowed: {{ linux_patching_allow_reboot }})"
+- name: Report the result
+  ansible.builtin.import_tasks: report.yml
+  tags: [patching, patching_report]

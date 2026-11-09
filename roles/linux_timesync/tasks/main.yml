@@ -1,49 +1,14 @@
 ---
-- name: Install chrony
-  ansible.builtin.package:
-    name: chrony
-    state: present
+# Time synchronisation with chrony on every supported distribution.
 
-- name: Find out which time services exist
-  ansible.builtin.service_facts:
+- name: Install chrony and remove competing daemons
+  ansible.builtin.import_tasks: install.yml
+  tags: [timesync, timesync_install]
 
-# Two time daemons fighting over the clock is worse than none.
-- name: Stop competing time services
-  ansible.builtin.service:
-    name: "{{ item }}"
-    state: stopped
-    enabled: false
-  loop:
-    - ntpd.service
-    - ntp.service
-    - systemd-timesyncd.service
-  when:
-    - item in ansible_facts.services
-    - ansible_facts.services[item].status != 'not-found'
+- name: Configure chrony
+  ansible.builtin.import_tasks: configure.yml
+  tags: [timesync, timesync_configure]
 
-- name: Write chrony.conf
-  ansible.builtin.template:
-    src: chrony.conf.j2
-    dest: "{{ linux_timesync_cfg.config }}"
-    owner: root
-    group: root
-    mode: "0644"
-  notify: Restart chrony
-
-- name: Enable and start chrony
-  ansible.builtin.service:
-    name: "{{ linux_timesync_cfg.service }}"
-    enabled: true
-    state: started
-
-- name: Apply config changes before checking sync
-  ansible.builtin.meta: flush_handlers
-
-- name: Check chrony can reach its sources
-  ansible.builtin.command: chronyc -n sources
-  register: linux_timesync_sources
-  changed_when: false
-  failed_when: linux_timesync_sources.stdout_lines | select('match', '^\^[*+]') | list | length == 0
-  retries: 6
-  delay: 10
-  until: linux_timesync_sources is not failed
+- name: Verify chrony has a usable source
+  ansible.builtin.import_tasks: verify.yml
+  tags: [timesync, timesync_verify]

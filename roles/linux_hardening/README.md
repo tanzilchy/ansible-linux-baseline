@@ -30,6 +30,15 @@ Inputs are validated against `meta/argument_specs.yml` before the first task run
 | `linux_hardening_idle_timeout` | int | `300` | Seconds before idle shells and logind sessions are closed. |
 | `linux_hardening_sshd_settings` | dict | built from the variables above, plus X11Forwarding no, PermitEmptyPasswords no, ClientAliveInterval 300, ClientAliveCountMax 3 | Full set of sshd keywords written to the server. Override the whole dictionary to add keywords. |
 
+## Task files
+
+`tasks/main.yml` only sets the order. Each concern has its own file and tag, so one part can run alone, for example `--tags hardening_sshd`.
+
+| File | Tag | Does |
+|---|---|---|
+| `tasks/sshd.yml` | `hardening_sshd` | Detect config layout, write settings, remove installer override |
+| `tasks/session_timeout.yml` | `hardening_timeout` | TMOUT and logind StopIdleSessionSec |
+
 ## Ordering
 
 Run after `linux_access`. Turning off root and password logins before key-based accounts exist locks Ansible out.

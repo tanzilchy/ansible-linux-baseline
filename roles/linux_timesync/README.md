@@ -26,6 +26,16 @@ Inputs are validated against `meta/argument_specs.yml` before the first task run
 
 Internal: `linux_timesync_os` in `vars/main.yml` maps each OS family to its chrony service name, config path and drift file. It is internal to the role.
 
+## Task files
+
+`tasks/main.yml` only sets the order. Each concern has its own file and tag, so one part can run alone, for example `--tags timesync_install`.
+
+| File | Tag | Does |
+|---|---|---|
+| `tasks/install.yml` | `timesync_install` | Install chrony, stop competing daemons |
+| `tasks/configure.yml` | `timesync_configure` | Template chrony.conf, enable the service |
+| `tasks/verify.yml` | `timesync_verify` | Wait for a usable time source |
+
 ## Example
 
 ```yaml

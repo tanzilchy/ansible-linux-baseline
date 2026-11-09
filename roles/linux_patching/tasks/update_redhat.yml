@@ -1,0 +1,17 @@
+---
+# Red Hat family: dnf update, then needs-restarting decides whether a reboot is needed.
+
+- name: Apply all updates (RHEL family)  # noqa: package-latest patching is the point of this task
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+    update_cache: true
+  register: linux_patching_dnf
+
+# needs-restarting -r: exit 0 = no reboot needed, 1 = reboot needed.
+- name: Ask the OS whether a reboot is needed (RHEL family)
+  ansible.builtin.command: needs-restarting -r
+  register: linux_patching_needs_restart
+  changed_when: false
+  check_mode: false
+  failed_when: linux_patching_needs_restart.rc not in [0, 1]

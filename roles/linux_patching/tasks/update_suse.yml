@@ -1,0 +1,18 @@
+---
+# SUSE family: zypper update, then zypper needs-rebooting decides whether a reboot is needed.
+
+- name: Apply all updates (SUSE family)
+  community.general.zypper:
+    name: "*"
+    state: latest
+    type: package
+    update_cache: true
+  register: linux_patching_zypper
+
+# zypper needs-rebooting: exit 0 = no reboot needed, 102 = reboot needed.
+- name: Ask the OS whether a reboot is needed (SUSE family)
+  ansible.builtin.command: zypper --non-interactive needs-rebooting
+  register: linux_patching_zypper_reboot
+  changed_when: false
+  check_mode: false
+  failed_when: linux_patching_zypper_reboot.rc not in [0, 102]

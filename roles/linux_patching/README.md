@@ -29,6 +29,21 @@ Inputs are validated against `meta/argument_specs.yml` before the first task run
 
 Playbook variable: `linux_patching_batch` is read by `playbooks/patch.yml`, not by this role. It sets `serial`, which Ansible evaluates before inventory variables load, so pass it with `-e linux_patching_batch=1`.
 
+## Task files
+
+`tasks/main.yml` only sets the order. Each concern has its own file and tag, so one part can run alone, for example `--tags patching_precheck`.
+
+| File | Tag | Does |
+|---|---|---|
+| `tasks/precheck.yml` | `patching_precheck` | Mirror reachability, kernel before |
+| `tasks/update_redhat.yml` | `patching_update` | dnf update and needs-restarting |
+| `tasks/update_debian.yml` | `patching_update` | apt dist-upgrade and reboot-required flag |
+| `tasks/update_suse.yml` | `patching_update` | zypper update and needs-rebooting |
+| `tasks/reboot.yml` | `patching_reboot` | Reboot only if needed and allowed |
+| `tasks/report.yml` | `patching_report` | Kernel before and after |
+
+Only one `update_<family>.yml` runs: `main.yml` includes it by name from `ansible_facts.os_family`, so adding a distribution family means adding one file.
+
 ## Example
 
 ```yaml

@@ -1,0 +1,14 @@
+---
+# Debian family: apt dist-upgrade, then /var/run/reboot-required decides whether a reboot is needed.
+
+- name: Apply all updates (Debian family)
+  ansible.builtin.apt:
+    upgrade: dist
+    update_cache: true
+    cache_valid_time: 3600
+  register: linux_patching_apt
+
+- name: Ask the OS whether a reboot is needed (Debian family)
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+  register: linux_patching_reboot_flag

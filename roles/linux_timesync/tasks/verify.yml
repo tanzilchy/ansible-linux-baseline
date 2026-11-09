@@ -1,0 +1,14 @@
+---
+# Prove synchronisation instead of assuming it.
+
+- name: Apply config changes before checking sync
+  ansible.builtin.meta: flush_handlers
+
+- name: Check chrony can reach its sources
+  ansible.builtin.command: chronyc -n sources
+  register: linux_timesync_sources
+  changed_when: false
+  failed_when: linux_timesync_sources.stdout_lines | select('match', '^\^[*+]') | list | length == 0
+  retries: 6
+  delay: 10
+  until: linux_timesync_sources is not failed

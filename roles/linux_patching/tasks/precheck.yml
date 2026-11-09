@@ -1,0 +1,19 @@
+---
+# Checks that run before anything changes.
+
+- name: Pick the package mirror for this host
+  ansible.builtin.set_fact:
+    linux_patching_repo: >-
+      {{ linux_patching_repo_targets[ansible_facts['os_family'] ~ '-' ~ ansible_facts['distribution_major_version']]
+         | default(linux_patching_repo_targets['default'] | default({})) }}
+
+- name: Check the package mirror is reachable before changing anything
+  ansible.builtin.wait_for:
+    host: "{{ linux_patching_repo.host }}"
+    port: "{{ linux_patching_repo.port }}"
+    timeout: 5
+  when: linux_patching_repo | length > 0
+
+- name: Record the running kernel before patching
+  ansible.builtin.set_fact:
+    linux_patching_kernel_before: "{{ ansible_facts['kernel'] }}"

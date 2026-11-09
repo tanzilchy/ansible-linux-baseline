@@ -1,0 +1,17 @@
+---
+# Write chrony.conf and make sure the service is enabled and running.
+
+- name: Write chrony.conf
+  ansible.builtin.template:
+    src: chrony.conf.j2
+    dest: "{{ linux_timesync_cfg.config }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart chrony
+
+- name: Enable and start chrony
+  ansible.builtin.service:
+    name: "{{ linux_timesync_cfg.service }}"
+    enabled: true
+    state: started

@@ -30,7 +30,9 @@ roles/
     vars/                      per-OS data internal to the role (not meant to be overridden)
     meta/argument_specs.yml    variable contract, validated before the first task runs
     meta/main.yml              author, licence, supported platforms
-    tasks/ handlers/ templates/
+    tasks/main.yml             order only; imports one file per concern
+    tasks/<concern>.yml        e.g. sudoers.yml, sshd.yml, update_redhat.yml
+    handlers/ templates/
 inventory/                     published example; copy it outside the repo per environment
   hosts.yml
   group_vars/
@@ -105,6 +107,13 @@ ansible-playbook $I playbooks/site.yml --check --diff
 ansible-playbook $I playbooks/site.yml
 ansible-playbook $I playbooks/patch.yml -l uat
 ansible-playbook $I playbooks/patch.yml -l prod -e linux_patching_batch=1
+```
+
+Every task file has its own tag, so one part can be re-applied alone:
+
+```bash
+ansible-playbook $I playbooks/site.yml --tags access_sudoers     # only the sudoers drop-ins
+ansible-playbook $I playbooks/site.yml --tags hardening_sshd     # only the sshd baseline
 ```
 
 `bootstrap.yml` logs in with each distribution's launch user (`bootstrap_user`) and launch key, then every later run uses the automation account.

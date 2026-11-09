@@ -1,0 +1,24 @@
+---
+# sudo rules as drop-ins in /etc/sudoers.d, each checked with visudo before it is installed.
+
+- name: Allow the admin group to use sudo with their own password
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/90-{{ linux_access_admin_group }}"
+    # SUSE ships "Defaults targetpw", which makes sudo ask for root's password. Admins use their own.
+    content: |
+      Defaults:%{{ linux_access_admin_group }} !targetpw
+      %{{ linux_access_admin_group }} ALL=(ALL) ALL
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+
+- name: Allow the automation account passwordless sudo
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/91-{{ linux_access_automation_user }}"
+    content: "{{ linux_access_automation_user }} ALL=(ALL) NOPASSWD: ALL\n"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+  when: linux_access_automation_key | length > 0

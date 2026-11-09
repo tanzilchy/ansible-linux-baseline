@@ -1,0 +1,19 @@
+---
+# The key-only account Ansible connects as after bootstrap.
+
+- name: Create the automation account (key only, locked password)
+  ansible.builtin.user:
+    name: "{{ linux_access_automation_user }}"
+    comment: Ansible automation
+    shell: /bin/bash
+    password: "!"
+    password_lock: true
+  when: linux_access_automation_key | length > 0
+
+- name: Install the automation SSH key
+  ansible.posix.authorized_key:
+    user: "{{ linux_access_automation_user }}"
+    key: "{{ linux_access_automation_key }}"
+    exclusive: true
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: linux_access_automation_key | length > 0

@@ -1,0 +1,14 @@
+---
+# Password ageing defaults applied to accounts created from now on.
+
+- name: Set password ageing defaults for new accounts
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: "^#?{{ item.key }}\\s"
+    line: "{{ item.key }}\t{{ item.value }}"
+  loop:
+    - { key: PASS_MAX_DAYS, value: "{{ linux_access_pass_max_days }}" }
+    - { key: PASS_MIN_DAYS, value: "{{ linux_access_pass_min_days }}" }
+    - { key: PASS_WARN_AGE, value: "{{ linux_access_pass_warn_age }}" }
+  loop_control:
+    label: "{{ item.key }}"

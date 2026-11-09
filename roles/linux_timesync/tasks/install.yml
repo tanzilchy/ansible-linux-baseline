@@ -1,0 +1,24 @@
+---
+# Install chrony and stop any other time daemon, so only one adjusts the clock.
+
+- name: Install chrony
+  ansible.builtin.package:
+    name: chrony
+    state: present
+
+- name: Find out which time services exist
+  ansible.builtin.service_facts:
+
+# Two time daemons fighting over the clock is worse than none.
+- name: Stop competing time services
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop:
+    - ntpd.service
+    - ntp.service
+    - systemd-timesyncd.service
+  when:
+    - item in ansible_facts.services
+    - ansible_facts.services[item].status != 'not-found'
