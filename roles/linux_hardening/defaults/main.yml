@@ -1,0 +1,19 @@
+---
+# "no" once the automation and admin accounts have keys (run bootstrap.yml first).
+linux_hardening_permit_root_login: "no"
+linux_hardening_password_authentication: "no"
+linux_hardening_max_auth_tries: 3
+linux_hardening_login_grace_time: 60
+
+# Idle shell sessions are closed after this many seconds.
+linux_hardening_idle_timeout: 300
+
+linux_hardening_sshd_settings:
+  PermitRootLogin: "{{ linux_hardening_permit_root_login }}"
+  PasswordAuthentication: "{{ linux_hardening_password_authentication }}"
+  MaxAuthTries: "{{ linux_hardening_max_auth_tries }}"
+  LoginGraceTime: "{{ linux_hardening_login_grace_time }}"
+  X11Forwarding: "no"
+  PermitEmptyPasswords: "no"
+  ClientAliveInterval: 300
+  ClientAliveCountMax: 3
