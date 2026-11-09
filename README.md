@@ -1,27 +1,91 @@
 # ansible-linux-baseline
 
-The baseline I apply to a new RHEL or Ubuntu server before it goes into a regulated environment: who can log in and how, password ageing, SSH settings, idle timeouts, time sync, log forwarding, and rolling OS patching.
+![lint](https://github.com/tanzilchy/ansible-linux-baseline/actions/workflows/lint.yml/badge.svg)
 
-Supported targets: RHEL 8 and 9 (and rebuilds such as Rocky and AlmaLinux), Ubuntu 22.04 and 24.04.
+The baseline I apply to a new Linux server before it goes into a regulated environment: who can log in and how, password ageing, SSH settings, idle timeouts, time sync, log forwarding, and rolling OS patching.
 
-## Playbooks
+## Supported systems
 
-| Playbook | When | What happens |
+| Family | Distributions | Package tool | Reboot check |
+|---|---|---|---|
+| Red Hat | RHEL 8 to 10, CentOS Stream 9 and 10, Rocky, AlmaLinux | dnf | `needs-restarting -r` |
+| Debian | Ubuntu 22.04 and 24.04, Debian 12 | apt | `/var/run/reboot-required` |
+| SUSE | SLES 15, openSUSE Leap 15 | zypper | `zypper needs-rebooting` |
+
+`linux_preflight` refuses anything older before a single change is made. CentOS 7, RHEL 7 and SLES 12 are end of life and ship Python versions that current ansible-core cannot manage.
+
+## Repository layout
+
+```
+ansible.cfg                    defaults that are safe for anyone who clones the repo
+requirements.yml               collections: ansible.posix, community.general
+playbooks/
+  bootstrap.yml                first contact: create the automation and admin accounts
+  site.yml                     the full baseline
+  patch.yml                    rolling OS patching
+roles/
+  <role>/
+    README.md                  what the role does, why, and every variable it reads
+    defaults/main.yml          default values (lowest precedence, meant to be overridden)
+    vars/                      per-OS data internal to the role (not meant to be overridden)
+    meta/argument_specs.yml    variable contract, validated before the first task runs
+    meta/main.yml              author, licence, supported platforms
+    tasks/ handlers/ templates/
+inventory/
+  example/                     the only inventory in Git; copy it per environment
+    hosts.yml
+    group_vars/
+      all/connection.yml       how Ansible logs in
+      all/baseline.yml         site-wide inputs for the roles
+      all/vault.yml.example    names of the secrets, never the values
+      rhel.yml ubuntu.yml suse.yml   per-distribution login user and Python path
+      uat.yml prod.yml         per-environment behaviour
+    host_vars/                 rare one-host exceptions
+```
+
+## Roles
+
+| Role | Purpose |
+|---|---|
+| [linux_preflight](roles/linux_preflight/README.md) | Refuses unsupported distributions and releases |
+| [linux_access](roles/linux_access/README.md) | Admin and automation accounts, SSH keys, sudoers drop-ins, password ageing, root break-glass password |
+| [linux_packages](roles/linux_packages/README.md) | Base admin and troubleshooting tools, one list per OS family |
+| [linux_timesync](roles/linux_timesync/README.md) | chrony as the only time service, with a source check |
+| [linux_hardening](roles/linux_hardening/README.md) | sshd baseline (drop-in or main file), idle shell and logind timeouts |
+| [linux_log_forwarding](roles/linux_log_forwarding/README.md) | rsyslog running, collector reachability |
+| [linux_patching](roles/linux_patching/README.md) | Mirror check, updates, conditional reboot, kernel report |
+
+## How variables are organised
+
+Every variable has exactly one home, chosen by who decides its value:
+
+| Who decides | Where it lives | Example |
 |---|---|---|
-| `playbooks/bootstrap.yml` | Once per new VM, as the install-time user with `--ask-pass` | Creates the key-only automation account and the admin accounts |
-| `playbooks/site.yml` | Any time; preview with `--check --diff` | Access, packages, chrony, SSH and session hardening, log collector check |
-| `playbooks/patch.yml` | Patch windows | Mirror reachability check, full update, reboot only if the OS needs it, kernel before and after |
+| The role author: a safe default | `roles/<role>/defaults/main.yml` | `linux_access_pass_max_days: 90` |
+| The role author: OS facts, not settings | `roles/<role>/vars/` | chrony's config path on SUSE |
+| The site: same for every host | `inventory/<env>/group_vars/all/` | NTP servers, admin accounts |
+| The distribution | `group_vars/rhel.yml`, `ubuntu.yml`, `suse.yml` | `bootstrap_user: ubuntu` |
+| The environment | `group_vars/uat.yml`, `prod.yml` | `linux_log_forwarding_required: true` |
+| One exceptional host | `host_vars/<host>.yml` | no automatic reboot on an appliance |
+| A secret | `group_vars/all/vault.yml`, encrypted, git-ignored | root password hash |
+| One run | `-e` on the command line | `-e linux_patching_batch=1` |
+
+The rules behind this layout:
+
+- **Role variables are prefixed with the role name** (`linux_access_*`, `linux_timesync_*`), so you can always tell which role reads a variable and two roles never collide. ansible-lint enforces this.
+- **Inventory files set only what differs from the defaults.** Everything else falls through to `defaults/main.yml`, so the inventory stays short and reads as a list of site decisions.
+- **Secrets are indirect.** Plain files reference `{{ vault_* }}` names, and the values live only in the encrypted `vault.yml`. You can search the repo for every place a secret is used without ever seeing one.
+- **Inputs are validated.** Each role's `meta/argument_specs.yml` declares types, required fields and allowed values. A typo such as `linux_access_pass_max_days: "ninety"` or an admin without a `name` stops the run before the first change.
+- **Hosts are grouped by distribution and by environment at the same time.** Distribution groups decide how to log in, environment groups decide how cautious to be, and `-l 'ubuntu:&prod'` combines them.
 
 ## Design decisions
 
 - **Order prevents lockouts.** Bootstrap creates key-based accounts first. Only then does `site.yml` set `PermitRootLogin no` and `PasswordAuthentication no`, and the sshd config is validated with `sshd -t` before the service reloads.
-- **People and automation are separate accounts.** Admins log in with their own key and type their own password for sudo. Passwordless sudo is limited to the automation account, which has a locked password and can only be reached by key.
-- **Password ageing is real.** 90 day maximum, 1 day minimum and 7 day warning in `login.defs` and on each account, including root's vaulted break-glass password. Nothing is set to never expire.
-- **One time daemon.** chrony on every distro. `ntpd` and `systemd-timesyncd` are stopped so two services never fight over the clock, and the run waits until chrony has a usable source.
-- **Controls only where they work.** `StopIdleSessionSec` is only written when systemd is 252 or newer, because older versions ignore it silently. `TMOUT` covers every shell.
-- **Version checks are numeric.** `distribution_major_version | int`, never string comparison, which would sort "10" before "8".
-- **Patching is rolling.** Batches of 25% by default with `max_fail_percentage: 0`, so one failed host stops the rollout. Reboots only happen when `needs-restarting -r` or `/var/run/reboot-required` says so.
-- **Idempotent by design.** A second run of `site.yml` should report no changes; that is the first thing to check on a new lab VM.
+- **People and automation are separate accounts.** Admins log in with their own key and type their own password for sudo. Passwordless sudo is limited to the automation account, which has a locked password and is reachable by key only.
+- **Password ageing applies to every interactive account.** 90 day maximum, 1 day minimum and 7 day warning, including root's vaulted break-glass password.
+- **Config layout is detected, not assumed.** The sshd role checks whether `sshd_config` includes `sshd_config.d/` instead of guessing from the distribution name.
+- **Version checks are numeric.** `distribution_major_version | int`, never a string comparison, which would sort "10" before "8".
+- **Patching is rolling.** Batches of 25% by default with `max_fail_percentage: 0`, so one failed host stops the rollout. Reboots happen only when the OS reports one is needed.
 
 ## Quick start
 
@@ -30,28 +94,26 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install ansible-core
 ansible-galaxy collection install -r requirements.yml
 
-cp inventory/example/group_vars/linux/vault.yml.example inventory/example/group_vars/linux/vault.yml
-ansible-vault encrypt inventory/example/group_vars/linux/vault.yml
+# One directory per environment; everything except inventory/example/ is git-ignored
+cp -r inventory/example inventory/lab
+cp inventory/lab/group_vars/all/vault.yml.example inventory/lab/group_vars/all/vault.yml
+ansible-vault encrypt inventory/lab/group_vars/all/vault.yml
+# edit hosts.yml, group_vars/all/*.yml
 
-ansible-playbook playbooks/bootstrap.yml -l app-uat-01.example.net -u root --ask-pass --ask-vault-pass
-ansible-playbook playbooks/site.yml -l uat --check --diff --ask-vault-pass
-ansible-playbook playbooks/site.yml -l uat --ask-vault-pass
-ansible-playbook playbooks/patch.yml -l uat -e linux_patching_batch=1 --ask-vault-pass
+I="-i inventory/lab/hosts.yml --ask-vault-pass"
+ansible-playbook $I playbooks/bootstrap.yml -l new-host
+ansible-playbook $I playbooks/site.yml --check --diff
+ansible-playbook $I playbooks/site.yml
+ansible-playbook $I playbooks/patch.yml -l uat
+ansible-playbook $I playbooks/patch.yml -l prod -e linux_patching_batch=1
 ```
 
-RHEL 8 ships Python 3.6 as its platform Python, which recent ansible-core releases no longer support on targets. Install `python3.11` from AppStream and set `ansible_python_interpreter`, or pin an older ansible-core.
+`bootstrap.yml` logs in with each distribution's launch user (`bootstrap_user`) and launch key, then every later run uses the automation account.
 
 ## Testing
 
-CI runs `yamllint`, `ansible-lint` (production profile) and a syntax check on every push.
+CI runs `yamllint`, `ansible-lint` (production profile) and a syntax check of every playbook on each push.
 
-## Roles
+## Licence
 
-| Role | Purpose |
-|---|---|
-| `linux_access` | Admin group, admin and automation accounts, SSH keys, sudoers drop-ins, password ageing, root break-glass password |
-| `linux_packages` | Base admin and troubleshooting tools, one list per OS family |
-| `linux_timesync` | chrony install, config, competing services off, source check |
-| `linux_hardening` | sshd baseline (drop-in or `sshd_config`), idle shell and logind timeouts |
-| `linux_log_forwarding` | rsyslog running, collector reachability |
-| `linux_patching` | Mirror check, updates, conditional reboot, kernel report |
+MIT

@@ -1,0 +1,13 @@
+---
+# Oldest major release supported per distribution. Anything older is refused before a change is made.
+# CentOS 7, RHEL 7 and SLES 12 are end of life and run Python versions current ansible-core cannot manage.
+linux_preflight_min_major:
+  RedHat: 8
+  Rocky: 8
+  AlmaLinux: 8
+  CentOS: 9 # CentOS Stream 9 and 10
+  Ubuntu: 22
+  Debian: 12
+  SLES: 15
+  SLES_SAP: 15
+  openSUSE Leap: 15

@@ -1,0 +1,15 @@
+---
+linux_packages_base:
+  - openssh
+  - bind-utils
+  - netcat-openbsd
+  - net-tools-deprecated
+  - traceroute
+  - tcpdump
+  - lsof
+  - rsync
+  - curl
+  - wget
+  - tar
+  - unzip
+  - vim

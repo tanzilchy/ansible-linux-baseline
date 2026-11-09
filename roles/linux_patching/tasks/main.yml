@@ -32,6 +32,15 @@
   when: ansible_facts['os_family'] == 'Debian'
   register: linux_patching_apt
 
+- name: Apply all updates (SUSE family)
+  community.general.zypper:
+    name: "*"
+    state: latest
+    type: package
+    update_cache: true
+  when: ansible_facts['os_family'] == 'Suse'
+  register: linux_patching_zypper
+
 # needs-restarting -r: exit 0 = no reboot needed, 1 = reboot needed.
 - name: Ask the OS whether a reboot is needed (RHEL family)
   ansible.builtin.command: needs-restarting -r
@@ -47,11 +56,21 @@
   register: linux_patching_reboot_flag
   when: ansible_facts['os_family'] == 'Debian'
 
+# zypper needs-rebooting: exit 0 = no reboot needed, 102 = reboot needed.
+- name: Ask the OS whether a reboot is needed (SUSE family)
+  ansible.builtin.command: zypper --non-interactive needs-rebooting
+  register: linux_patching_zypper_reboot
+  changed_when: false
+  check_mode: false
+  failed_when: linux_patching_zypper_reboot.rc not in [0, 102]
+  when: ansible_facts['os_family'] == 'Suse'
+
 - name: Decide whether to reboot
   ansible.builtin.set_fact:
     linux_patching_reboot_required: >-
       {{ (linux_patching_needs_restart.rc | default(0)) == 1
-         or (linux_patching_reboot_flag.stat.exists | default(false)) }}
+         or (linux_patching_reboot_flag.stat.exists | default(false))
+         or (linux_patching_zypper_reboot.rc | default(0)) == 102 }}
 
 - name: Reboot and wait for the host to come back
   ansible.builtin.reboot:

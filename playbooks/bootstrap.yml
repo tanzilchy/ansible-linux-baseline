@@ -1,11 +1,17 @@
 ---
-# First contact with a new VM: create the automation and admin accounts with SSH keys.
-# Run once as the install-time user, with that user's password:
-#   ansible-playbook playbooks/bootstrap.yml -l new-vm-01 -u root --ask-pass
-# After this, every other playbook connects as the automation account by key, and
-# site.yml can safely set PermitRootLogin no without locking Ansible out.
+# First contact with a new host: create the automation and admin accounts with SSH keys.
+# Connects as the distribution's launch user (bootstrap_user) with the launch key, then
+# every other playbook connects as the automation account defined in group_vars/all.
+#   ansible-playbook -i inventory/<env>/hosts.yml playbooks/bootstrap.yml -l new-host
+# On-premises hosts installed with a root password instead of a key:
+#   ansible-playbook ... playbooks/bootstrap.yml -l new-host -e bootstrap_user=root --ask-pass
 - name: Bootstrap access on new hosts
   hosts: linux
   become: true
+  vars:
+    # Play variables outrank inventory variables, so this replaces the normal login for this play only.
+    ansible_user: "{{ bootstrap_user }}"
+    ansible_ssh_private_key_file: "{{ bootstrap_ssh_private_key_file }}"
   roles:
+    - linux_preflight
     - linux_access

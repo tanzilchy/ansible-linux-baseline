@@ -1,0 +1,23 @@
+---
+# Variable contract for this role. Ansible validates the inputs against it before the
+# first task runs, and README.md documents the same variables.
+argument_specs:
+  main:
+    short_description: rsyslog running, and a reachability check for the central log collector.
+    options:
+      linux_log_forwarding_target:
+        type: dict
+        description: 'Collector as `{host: ..., port: ...}`. Empty skips the check.'
+        default: {}
+        options:
+          host:
+            type: str
+            description: Collector hostname or IP.
+          port:
+            type: int
+            description: TCP port.
+      linux_log_forwarding_required:
+        type: bool
+        description: Fail the run if the collector is unreachable. The example inventory sets `false` for uat and
+          `true` for prod.
+        default: true

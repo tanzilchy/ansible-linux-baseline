@@ -1,0 +1,21 @@
+---
+# Variable contract for this role. Ansible validates the inputs against it before the
+# first task runs, and README.md documents the same variables.
+argument_specs:
+  main:
+    short_description: Refuse unsupported distributions and releases before any change is made.
+    options:
+      linux_preflight_min_major:
+        type: dict
+        description: Oldest supported major release per distribution, keyed by `ansible_facts.distribution`. Distributions
+          not listed are refused.
+        default:
+          RedHat: 8
+          Rocky: 8
+          AlmaLinux: 8
+          CentOS: 9
+          Ubuntu: 22
+          Debian: 12
+          SLES: 15
+          SLES_SAP: 15
+          openSUSE Leap: 15

@@ -1,0 +1,7 @@
+---
+# SUSE family (SLES 15, openSUSE Leap 15).
+bootstrap_user: ec2-user
+
+# SUSE 15 ships Python 3.6 as /usr/bin/python3, which current ansible-core cannot manage.
+# Install python311 first:  ssh <host> 'sudo zypper -n in python311'
+ansible_python_interpreter: /usr/bin/python3.11

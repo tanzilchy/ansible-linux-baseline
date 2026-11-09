@@ -1,0 +1,15 @@
+---
+# Variable contract for this role. Ansible validates the inputs against it before the
+# first task runs, and README.md documents the same variables.
+argument_specs:
+  main:
+    short_description: chrony as the only time service, with a check that it has a usable source.
+    options:
+      linux_timesync_servers:
+        type: list
+        description: NTP servers, each written as `server <name> iburst`. On AWS use `169.254.169.123`.
+        elements: str
+        default:
+          - 0.pool.ntp.org
+          - 1.pool.ntp.org
+          - 2.pool.ntp.org

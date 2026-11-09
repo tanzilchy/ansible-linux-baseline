@@ -1,0 +1,63 @@
+---
+# Variable contract for this role. Ansible validates the inputs against it before the
+# first task runs, and README.md documents the same variables.
+argument_specs:
+  main:
+    short_description: Accounts, SSH keys, sudo rules and password ageing.
+    options:
+      linux_access_admin_group:
+        type: str
+        description: Group whose members may use sudo with their own password.
+        default: opsadmins
+      linux_access_admins:
+        type: list
+        description: 'Human administrators. Each item: `name` (required), `ssh_key` (required while present), `comment`,
+          `password_hash` (SHA-512, from Vault, set only when the account is created), `state` (`present` or `absent`;
+          absent also removes the home directory).'
+        elements: dict
+        default: []
+        options:
+          name:
+            type: str
+            description: Login name.
+            required: true
+          ssh_key:
+            type: str
+            description: Public key line installed as the only authorized key.
+          comment:
+            type: str
+            description: Full name for the GECOS field.
+          password_hash:
+            type: str
+            description: SHA-512 crypt hash used for sudo. Set on creation only.
+          state:
+            type: str
+            description: Whether the account should exist.
+            choices:
+              - present
+              - absent
+            default: present
+      linux_access_automation_user:
+        type: str
+        description: Account Ansible connects as after bootstrap.
+        default: ansible
+      linux_access_automation_key:
+        type: str
+        description: Public key for the automation account. Empty skips creating the account.
+        default: ''
+      linux_access_pass_max_days:
+        type: int
+        description: Maximum password age in days.
+        default: 90
+      linux_access_pass_min_days:
+        type: int
+        description: Minimum days between password changes.
+        default: 1
+      linux_access_pass_warn_age:
+        type: int
+        description: Days of warning before a password expires.
+        default: 7
+      linux_access_root_password_hash:
+        type: str
+        description: SHA-512 hash for root's break-glass password, from Vault. Empty leaves root untouched.
+        default: ''

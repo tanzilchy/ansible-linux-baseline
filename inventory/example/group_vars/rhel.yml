@@ -1,0 +1,4 @@
+---
+# Red Hat family (RHEL, Rocky, AlmaLinux, CentOS Stream).
+# User that exists on a freshly installed or cloud-launched host, used once by bootstrap.yml.
+bootstrap_user: ec2-user

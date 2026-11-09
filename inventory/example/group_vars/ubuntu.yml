@@ -1,0 +1,3 @@
+---
+# Ubuntu. Cloud images create the "ubuntu" user at launch.
+bootstrap_user: ubuntu

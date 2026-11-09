@@ -1,0 +1,20 @@
+---
+# Variable contract for this role. Ansible validates the inputs against it before the
+# first task runs, and README.md documents the same variables.
+argument_specs:
+  main:
+    short_description: Full OS update with a pre-check, a conditional reboot and a kernel report.
+    options:
+      linux_patching_repo_targets:
+        type: dict
+        description: Mirror to check per `<os_family>-<major>` key (for example `RedHat-9`), with a `default` fallback.
+          Each value is `{host, port}`. Empty skips the check.
+        default: {}
+      linux_patching_allow_reboot:
+        type: bool
+        description: Allow the role to reboot when the OS reports one is needed.
+        default: true
+      linux_patching_reboot_timeout:
+        type: int
+        description: Seconds to wait for the host to come back.
+        default: 900

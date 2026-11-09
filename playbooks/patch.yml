@@ -1,12 +1,15 @@
 ---
-# Rolling OS patching. Hosts are patched in batches; one failure stops the rollout
+# Rolling OS patching. Hosts are patched in batches and one failure stops the rollout,
 # so a bad update never reaches the whole fleet.
-#   ansible-playbook playbooks/patch.yml -l uat -e linux_patching_batch=1
-#   ansible-playbook playbooks/patch.yml -l prod -e linux_patching_batch=20%
+#   ansible-playbook -i inventory/<env>/hosts.yml playbooks/patch.yml -l uat
+#   ansible-playbook -i inventory/<env>/hosts.yml playbooks/patch.yml -l prod -e linux_patching_batch=1
+# The batch size is a play keyword evaluated before inventory variables are loaded,
+# so it is set on the command line rather than in group_vars.
 - name: Patch Linux hosts in batches
   hosts: linux
   become: true
   serial: "{{ linux_patching_batch | default('25%') }}"
   max_fail_percentage: 0
   roles:
+    - linux_preflight
     - linux_patching

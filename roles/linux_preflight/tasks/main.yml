@@ -1,0 +1,10 @@
+---
+- name: Refuse unsupported distributions and releases
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['distribution'] in linux_preflight_min_major
+      - ansible_facts['distribution_major_version'] | int >= linux_preflight_min_major[ansible_facts['distribution']]
+    fail_msg: >-
+      {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }} is not supported.
+      Supported: {{ linux_preflight_min_major | dict2items | map('join', ' >= ') | join(', ') }}
+    success_msg: "{{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }} ({{ ansible_facts['os_family'] }} family)"

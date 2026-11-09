@@ -1,0 +1,12 @@
+---
+# How Ansible connects to every host after bootstrap.yml has run.
+# The automation account is created by the linux_access role and accepts SSH keys only.
+ansible_user: "{{ linux_access_automation_user }}"
+
+# Path to the private key that matches linux_access_automation_key (see baseline.yml).
+# Kept on the control node only; never commit the key itself.
+ansible_ssh_private_key_file: ~/.ssh/ansible_automation
+
+# Key installed by the cloud provider or installer at launch. Used only by bootstrap.yml,
+# together with bootstrap_user from the distribution group (rhel.yml, ubuntu.yml, suse.yml).
+bootstrap_ssh_private_key_file: ~/.ssh/cloud-launch-key.pem

@@ -1,11 +1,27 @@
 ---
-# OpenSSH reads sshd_config.d/*.conf on RHEL 9 and Ubuntu 20.04+. RHEL 8 has no Include line,
-# so there the settings go straight into sshd_config.
+# RHEL 9 and Ubuntu include sshd_config.d/*.conf; RHEL 8 does not. Recent SUSE releases ship
+# the defaults in /usr/etc/ssh and have no /etc/ssh/sshd_config at all, only the drop-in directory.
+# Detect it instead of guessing from the distribution name.
+- name: Read the main sshd config
+  ansible.builtin.slurp:
+    src: /etc/ssh/sshd_config
+  register: linux_hardening_sshd_main
+  failed_when: false
+
 - name: Decide where the sshd settings go
   ansible.builtin.set_fact:
     linux_hardening_sshd_dropin: >-
-      {{ ansible_facts['os_family'] == 'Debian'
-         or (ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] | int >= 9) }}
+      {{ linux_hardening_sshd_main.content is not defined
+         or (linux_hardening_sshd_main.content | b64decode) is search('(?mi)^\\s*Include\\s+/etc/ssh/sshd_config\\.d/') }}
+
+- name: Make sure the drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/ssh/sshd_config.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: linux_hardening_sshd_dropin | bool
 
 # Anaconda writes 01-permitrootlogin.conf when root SSH was allowed at install time.
 # Our file is named 00-* so it is read first and wins, but the leftover is removed to avoid confusion.

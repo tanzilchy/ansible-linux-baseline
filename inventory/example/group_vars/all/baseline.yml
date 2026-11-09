@@ -1,0 +1,30 @@
+---
+# Site-wide inputs for the baseline roles.
+# Only values that differ from a role's defaults belong here. Every variable is documented
+# in roles/<role>/README.md and validated by roles/<role>/meta/argument_specs.yml.
+
+# --- linux_access -----------------------------------------------------------
+linux_access_automation_user: ansible
+# Public half of ansible_ssh_private_key_file:  ssh-keygen -y -f ~/.ssh/ansible_automation
+linux_access_automation_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExampleKeyOnlyReplaceMe ansible@controller"
+linux_access_admin_group: opsadmins
+linux_access_admins:
+  - name: jdoe
+    comment: Jane Doe
+    ssh_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExampleKeyOnlyReplaceMe jdoe@laptop"
+    password_hash: "{{ vault_linux_admin_password_hashes['jdoe'] }}"
+linux_access_root_password_hash: "{{ vault_linux_root_password_hash }}"
+
+# --- linux_timesync ---------------------------------------------------------
+linux_timesync_servers:
+  - ntp1.example.net
+  - ntp2.example.net
+
+# --- linux_patching ---------------------------------------------------------
+linux_patching_repo_targets:
+  default: { host: mirror.example.net, port: 443 }
+
+# --- linux_log_forwarding ---------------------------------------------------
+linux_log_forwarding_target:
+  host: siem.example.net
+  port: 514

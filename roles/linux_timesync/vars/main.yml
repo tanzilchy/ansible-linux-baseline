@@ -8,4 +8,8 @@ linux_timesync_os:
     service: chrony
     config: /etc/chrony/chrony.conf
     driftfile: /var/lib/chrony/chrony.drift
+  Suse:
+    service: chronyd
+    config: /etc/chrony.conf
+    driftfile: /var/lib/chrony/drift
 linux_timesync_cfg: "{{ linux_timesync_os[ansible_facts['os_family']] }}"

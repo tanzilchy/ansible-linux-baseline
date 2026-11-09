@@ -1,7 +1,0 @@
----
-# Copy to vault.yml, fill in, then: ansible-vault encrypt inventory/<env>/group_vars/linux/vault.yml
-# Generate hashes with:  openssl passwd -6
-#                   or:  mkpasswd --method=sha-512
-vault_linux_root_password_hash: "$6$replace$me"
-vault_linux_admin_password_hashes:
-  jdoe: "$6$replace$me"

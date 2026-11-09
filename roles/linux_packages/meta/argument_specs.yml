@@ -1,0 +1,12 @@
+---
+# Variable contract for this role. Ansible validates the inputs against it before the
+# first task runs, and README.md documents the same variables.
+argument_specs:
+  main:
+    short_description: Base administration and troubleshooting packages, one list per OS family.
+    options:
+      linux_packages_extra:
+        type: list
+        description: Additional packages installed on every host, on top of the OS family list.
+        elements: str
+        default: []

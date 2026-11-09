@@ -1,4 +1,9 @@
+# Only the example inventory is published. Real environments stay on the control node.
+inventory/*
+!inventory/example/
 **/vault.yml
+*.pem
 *.retry
 collections/
 .venv/
+.ansible/

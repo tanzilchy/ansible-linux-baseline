@@ -1,0 +1,3 @@
+---
+# Production: a missing log collector fails the run, because audit logs must be shipped.
+linux_log_forwarding_required: true
